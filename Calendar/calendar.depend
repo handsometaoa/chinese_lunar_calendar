@@ -1,0 +1,66 @@
+# depslib dependency file v1.0
+1597370214 source:c:\users\administrator\desktop\calendar\main.cpp
+	<iostream>
+	"Date.h"
+
+1597370264 c:\users\administrator\desktop\calendar\include\date.h
+
+1597744127 source:c:\users\administrator\desktop\calendar\src\date.cpp
+	"Date.h"
+	<stdio.h>
+	<ctime>
+	<string>
+	<iostream>
+	<iomanip>
+	<cmath>
+	<string.h>
+
+1597145613 source:c:\users\帅气的涛啊\desktop\calendar\main.cpp
+	<iostream>
+	"Date.h"
+
+1597144549 c:\users\帅气的涛啊\desktop\calendar\include\date.h
+	<string>
+
+1597145901 source:c:\users\帅气的涛啊\desktop\calendar\src\date.cpp
+	"Date.h"
+	<stdio.h>
+	<ctime>
+	<string>
+	<iostream>
+	<iomanip>
+	<cmath>
+	<string.h>
+
+1597370214 source:c:\users\administrator\desktop\数据结构综合训练\2018013150_王江涛\calendar\main.cpp
+	<iostream>
+	"Date.h"
+
+1597370264 c:\users\administrator\desktop\数据结构综合训练\2018013150_王江涛\calendar\include\date.h
+
+1597744127 source:c:\users\administrator\desktop\数据结构综合训练\2018013150_王江涛\calendar\src\date.cpp
+	"Date.h"
+	<stdio.h>
+	<ctime>
+	<string>
+	<iostream>
+	<iomanip>
+	<cmath>
+	<string.h>
+
+1598002742 source:c:\users\administrator\desktop\数据结构综合训练\2018013150_王江涛\实习代码\main.cpp
+	<iostream>
+	"Date.h"
+
+1597995984 c:\users\administrator\desktop\数据结构综合训练\2018013150_王江涛\实习代码\include\date.h
+
+1598003074 source:c:\users\administrator\desktop\数据结构综合训练\2018013150_王江涛\实习代码\src\date.cpp
+	"Date.h"
+	<stdio.h>
+	<ctime>
+	<string>
+	<iostream>
+	<iomanip>
+	<cmath>
+	<string.h>
+
