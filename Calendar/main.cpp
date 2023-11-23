@@ -6,7 +6,7 @@ int main()
 {
 
     int num;
-    char solar_Terms[3];
+    char solar_terms[3];
     int year,month,day;
     print();
     while(1)
@@ -29,7 +29,7 @@ int main()
         case 3:
             cout<<"请输入要查询的年、月、日：";
             cin>>year>>month>>day;
-            print_number_week(year,month,day);
+            print_number_of_date_to_now(year,month,day);
             break;
         case 4:
             cout<<"请输入要查询的年、月、日：";
@@ -38,8 +38,8 @@ int main()
             break;
         case 5:
             cout<<"请输入要查询的年份及节气：";
-            cin>>year>>solar_Terms;
-            solar_term(year,solar_Terms);
+            cin>>year>>solar_terms;
+            get_date_by_solar_term(year,solar_terms);
             break;
         case 0:
             return 0;

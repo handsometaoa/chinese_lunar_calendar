@@ -10,18 +10,23 @@
 using namespace std;
 
 
-/*农历查询表  来源：https://www.jianshu.com/p/57e7bd43c00b    */
-/*第1位    表示假如有闰月，0代表闰小月，1代表闰大月
- *第2-4位  表示12个二进制位 一位表示一个月是大月还是小月
- *最后1位  表示闰哪个月，0表示不闰*/
-unsigned int LunarCalendar[199] =
+string lunarMonth[]= {" ","正月","二月","三月","四月","五月","六月","七月","八月","九月","十月","冬月","腊月"};
+string lunarDay[]= {"零","一","二","三","四","五","六","七","八","九","十"};
+string lunarDay2[]= {"初","十","廿","卅"};
+
+/** 农历查询表  来源：https://www.jianshu.com/p/57e7bd43c00b
+ *  Ox0c950     是5个16进制数，共20bit
+ *  第1位       表示假如有闰月，0代表闰小月，1代表闰大月
+ *  第2-4位     表示12个二进制位 一位表示一个月是大月还是小月
+ *  第5位       表示闰哪个月，0表示不闰
+ */
+unsigned int sg_lunarCalendar[199] =
 {
-    /*1900年开始*/
-    /*0x04bd8,0x04ae0,0x0a570,0x054d5,0x0d260,0x0d950,0x16554,0x056a0,0x09ad0,0x055d2,
+    /* 1900年开始，我的日历要求1940-2040年 用不到
+    0x04bd8,0x04ae0,0x0a570,0x054d5,0x0d260,0x0d950,0x16554,0x056a0,0x09ad0,0x055d2,
     0x04ae0,0x0a5b6,0x0a4d0,0x0d250,0x1d255,0x0b540,0x0d6a0,0x0ada2,0x095b0,0x14977,
     0x04970,0x0a4b0,0x0b4b5,0x06a50,0x06d40,0x1ab54,0x02b60,0x09570,0x052f2,0x04970,
     0x06566,0x0d4a0,0x0ea50,0x06e95,0x05ad0,0x02b60,0x186e3,0x092e0,0x1c8d7,*/
-    /*我的日历要求1940-2040年 以上用不到*/
 
     0x0c950,/*1939年*/   /*查询公历1940年1月，农历其实是1939年*/
     0x0d4a0,0x1d8a6,0x0b550,0x056a0,0x1a5b4,0x025d0,0x092d0,0x0d2b2,0x0a950,0x0b557,
@@ -37,250 +42,9 @@ unsigned int LunarCalendar[199] =
     0x0b5a0,0x056d0,0x055b2,0x049b0,0x0a577,0x0a4b0,0x0aa50,0x1b255,0x06d20,0x0ada0
 };
 
-/*获取系统时间*/
-void gettime(int &year,int &month,int &day)
-{
-    time_t time1;
-    struct tm *ptime;
-    time(&time1);
-    ptime = localtime(&time1);
-    year=ptime->tm_year + 1900;
-    month=ptime->tm_mon + 1;
-    day=ptime->tm_mday;
-}
-
-/*判断year年是否是闰年*/
-bool isLeapYear(int year)
-{
-    /*可以被4且100整除或者可以被400整除*/
-    if ((year % 4 == 0 && year % 100 != 0) || year % 400 == 0)
-    {
-        return true;
-    }
-    else
-    {
-        return false;
-    }
-}
-
-/*获取year年month月有多少天*/
-int getDaysOfMonth(int year,int month)
-{
-    /*平年各月公历天数*/
-    int days[12]= {31,28,31,30,31,30,31,31,30,31,30,31};
-    if(isLeapYear(year)&&month==2)
-        return 29;
-    else
-        return days[month-1];
-}
-
-/*获取year年month月day日到1939年1月1日的天数*/
-int getDayTo1939(int year,int month,int day)
-{
-    int days=0;
-    /*从1939年开始计算，直到year-1年，它们都是整数年*/
-    for(int i=year-1; i>=1939; i--)
-    {
-        if(isLeapYear(i))
-            days+=366;
-        else
-            days+=365;
-    }
-    /*计算year年1月到year年month-1月  它们是整数月*/
-    for(int i=month-1; i>0; i--)
-    {
-        days+=getDaysOfMonth(year,i);
-    }
-    /*计算year年month月1日到yera年month月day日天数*/
-    days+=day;
-    return days-1;
-}
-
-/*获取year年month月day日是星期几*/
-string getDayOfWeek(int year,int month,int day)
-{
-    string weeks[7]= {"星期日","星期一","星期二","星期三","星期四","星期五","星期六"};
-    /*获取year年month月day日到1939年1月1日的天数*/
-    int days=getDayTo1939(year,month,day);
-    int week=days%7;
-    return weeks[week];
-}
-/*整型版星期几*/
-int getDayOfWeek1(int year,int month,int day)
-{
-    int days=getDayTo1939(year,month,day);
-    int week=days-(days/7)*7;
-    return week;
-}
-
-/*获取year年month月day日到现在的天数 正值为过去，负值为未来*/
-int getDaysOfMonthToToday(int year,int month,int day)
-{
-    int nowyear;
-    int nowmonth;
-    int nowday;
-    gettime(nowyear,nowmonth,nowday);
-    /*现在时间到1939年1月1日的天数*/
-    int nowto1939=getDayTo1939(nowyear,nowmonth,nowday);
-    /*输入的时间到1939年1月1日的天数*/
-    int tempto1939=getDayTo1939(year,month,day);
-    /*正数为过去，负数为未来*/
-    return nowto1939-tempto1939;
-}
-
-/*检查年月日合法性*/
-bool checkDate(int year,int month,int day)
-{
-    /*还需要判断 year年month月  是否含day天，比如4月有30天，输入31就是错误的*/
-    if(year<1939||year>2041||month<0||month>12||day<0||day>getDaysOfMonth(year,month))
-        return false;
-    else
-        return true;
-}
-
-
-void print_number_week(int year,int month,int day)
-{
-    if(!checkDate(year,month,day))
-    {
-        cout<<"日期输入出错，请确保日期正确性！"<<endl;
-        return;
-    }
-    if(getDaysOfMonthToToday(year,month,day)>0)
-        cout<<year<<"年"<<month<<"月"<<day<<"日\t"<<getDayOfWeek(year,month,day)<<"\t距现在已过去"<<getDaysOfMonthToToday(year,month,day)<<"天"<<endl;
-    else
-        cout<<year<<"年"<<month<<"月"<<day<<"日\t"<<getDayOfWeek(year,month,day)<<"\t距现在还有"<<-getDaysOfMonthToToday(year,month,day)<<"天"<<endl;
-}
-
-/*输入年份月份输出月日历表*/
-void print_monthly_calendar(int year,int month)
-{
-    if(year>2041||year<1939||month>12||month<1)
-    {
-        cout<<"日期输入出错，请确保日期正确性！"<<endl;
-        return;
-    }
-    cout<<"\t"<<year<<"年"<<month<<"月"<<endl;
-    cout<<" SUN MON TUE WED THU FRI SAT"<<endl;
-    /*计算year年month月1日星期几*/
-    int week=getDayOfWeek1(year,month,1);
-    /*调整1日到对应的星期数*/
-    for(int i=1; i<=week&&week!=7; i++)
-        cout<<"    ";
-    /*打印日历信息*/
-    for(int i=1; i<=getDaysOfMonth(year,month); i++)
-    {
-        cout<<setw(3)<<i<<" ";
-        if((week+i)%7==0)
-            cout<<endl;
-    }
-}
-
-
-/*输入年份、季度 一行输出3个月*/
-void print_seasons_calendar(int year,int num)
-{
-    if(num>4||num<0)
-    {
-        cout<<"输入季度出错！"<<endl;
-        return;
-    }
-    int month=1+3*(num-1);
-    /*打印日历头*/
-    cout<<month<<" SUN MON TUE WED THU FRI SAT\t"<<month+1<<" SUN MON TUE WED THU FRI SAT\t"<<month+2<<" SUN MON TUE WED THU FRI SAT"<<endl;
-    /*week1、week2、week3 分别代表一个季度的三个月的一日对应星期数*/
-    int week1=getDayOfWeek1(year,month,1);
-    int week2=getDayOfWeek1(year,month+1,1);
-    int week3=getDayOfWeek1(year,month+2,1);
-    /*tmp1、tmp2、tmp3分别代表三个月的最大天数*/
-    int tmp1=getDaysOfMonth(year,month),tmp2=getDaysOfMonth(year,month+1),tmp3=getDaysOfMonth(year,month+2);
-
-    int day1,day2,day3;
-
-    /*依次输出第一行信息*/
-    cout<<"  ";
-    for(int i=1; i<=week1 &&week1!=7; i++)
-        cout<<"    ";
-    for(int i=1; i<=tmp1; i++)
-    {
-        cout<<setw(3)<<i<<" ";
-        if((week1+i)%7==0)
-        {
-            day1=i+1;
-            break;
-        }
-    }
-    cout<<"    ";
-    for(int i=1; i<=week2 && week2!=7; i++)
-        cout<<"    ";
-    for(int i=1; i<=tmp2; i++)
-    {
-        cout<<setw(3)<<i<<" ";
-        if((week2+i)%7==0)
-        {
-            day2=i+1;
-            break;
-        }
-    }
-    cout<<"    ";
-    for(int i=1; i<=week3 && week3!=7; i++)
-        cout<<"    ";
-    for(int i=1; i<=tmp3; i++)
-    {
-        cout<<setw(3)<<i<<" ";
-        if((week3+i)%7==0)
-        {
-            day3=i+1;
-            cout<<endl;
-            break;
-        }
-    }
-
-    /*打印余下信息*/
-    for(int j=0; j<5; j++)
-    {
-        /*如果三个月信息全部打印完，则退出*/
-        if(day1>tmp1&&day2>tmp2&&day3>tmp3)
-            break;
-        /*数字21代表一行三个周，可容纳21天*/
-        for(int i=0; i<21;)
-        {
-            cout<<"  ";
-            while(i<7)
-            {
-                i++;
-                /*如果没打印完就打印数字，如果整月天数已经打印完，则输出空格*/
-                if(day1<=tmp1)
-                    cout<<setw(3)<<day1++<<" ";
-                else
-                    cout<<setw(3)<<" "<<" ";
-            }
-            /*打印月份与月份之间的间隔*/
-            cout<<"    ";
-            while(i<14&&i>=7)
-            {
-                i++;
-                if(day2<=tmp2)
-                    cout<<setw(3)<<day2++<<" ";
-                else
-                    cout<<setw(3)<<" "<<" ";
-            }
-            cout<<"    ";
-            while(i<21&&i>=14)
-            {
-                i++;
-                if(day3<=tmp3)
-                    cout<<setw(3)<<day3++<<" ";
-                else
-                    cout<<setw(3)<<" "<<" ";
-            }
-        }
-        cout<<endl;
-    }
-    cout<<endl;
-}
-
-/*显示欢迎界面*/
+/**
+ * 显示欢迎界面
+ */
 void print()
 {
     cout<<"\n\t\t欢迎来到我的日历表（1940-2040年）"<<endl;
@@ -293,174 +57,20 @@ void print()
     cout<<"\t\t*****按0退出*****"<<endl;
 }
 
-/*输出年日历表*/
-void print_annual_calendar(int year)
-{
-    if(year>2041||year<1939)
-    {
-        cout<<"日期输入出错，请确保日期正确性！"<<endl;
-        return;
-    }
-    cout<<"\t\t\t\t\t  "<<"------------"<<endl;
-    cout<<"\t\t\t\t\t  "<<year<<"年日历表"<<endl;
-    cout<<"\t\t\t\t\t  "<<"------------"<<endl;
-
-    /*循环输出四个季度 打印完整年日历*/
-    for(int i=1; i<=4; i++)
-    {
-        print_seasons_calendar(year,i);
-    }
-}
 
 
-string nongMonth[]= {" ","正月","二月","三月","四月","五月","六月","七月","八月","九月","十月","冬月","腊月"};
-string nongday[]= {"零","一","二","三","四","五","六","七","八","九","十"};
-string nongday2[]= {"初","十","廿","卅"};
-
-
-/*判断润大小月*/
-bool is_large_month(int year)
-{
-    /*查表找出是否为闰月 判断high是不是为0*/
-    int high =(LunarCalendar[year-1939]>>16);
-    if(high==0x00)
-        return false;
-    else
-        return true;
-}
-/*返回 润几月  0代表不闰*/
-int isNongLeapYear(int year)
-{
-    /*输出农历润几月*/
-    int low = LunarCalendar[year-1939] & 0xF;
-    return low;
-}
-
-/*判断农历某年某月多少天*/      /*LunarCalendar 表示农历对照表*/
-int getDaysOfMonthOfNongMonth(int year,int month)
-{
-    /*查表，根据大小月，计算农历月天数*/
-    int bit=1 << (16-month);
-    if((LunarCalendar[year-1939]/*&0x0000FFFF*/&bit)==0)
-        return 29;
-    else
-        return 30;
-}
-
-/*判断某年农历多少天*/
-int getDayOfNongYear(int year)
-{
-    int days=0;
-    /*农历十二个月天数*/
-    for(int i=1; i<=12; i++)
-    {
-        days+=getDaysOfMonthOfNongMonth(year,i);
-    }
-    /*假如有闰月，加上闰月天数*/
-    if(isNongLeapYear(year)!=0)
-    {
-        if(is_large_month(year))
-            days+=30;
-        else
-            days+=29;
-    }
-    return days;
-}
-
-
-/*输出农历日历*/
-void printNong(int days)
-{
-    int year=1939,month=1,day=1;
-    /*由于1939年1月1日往往是农历1938年，所以减去48天，从1939年正月初一计算，因为本计算器计算范围为1940年-2040年 所以可以满足*/
-    days-=48;
-
-    /*判断减去下一年的天数，会不会是负值，不是便减去并增加农历年*/
-    for(int i=1939; (days-getDayOfNongYear(i))>0; i++)
-    {
-        days-=getDayOfNongYear(i);
-        year=i+1;
-    }
-    int num;
-    int signal=0;
-    /*判断减去下一月天数，会不会是负值，不会便农历月加1*/
-    for(int j=1; ((days-getDaysOfMonthOfNongMonth(year,j))>0)&&j<12; j++)
-    {
-        days-=getDaysOfMonthOfNongMonth(year,j);
-        if(j==isNongLeapYear(year))
-        {
-            if(is_large_month(year))
-            {
-                days-=30;
-                num=30;
-            }
-            else
-            {
-                days-=29;
-                num=29;
-            }
-        }
-        /*当减去农历月的时候，加入变为负值，那么再加回来*/
-        if(days<0)
-        {
-            /*农历闰月标记*/
-            signal=1;
-            days +=num;
-            month=j;
-            break;
-        }
-        month=month+1;
-    }
-    /*剩余天数便是农历日*/
-    day=days;
-    cout<<year<<"年";
-    if(signal==1)
-        cout<<" 闰";
-    cout<<nongMonth[month];
-    if(day>0&&day<=10)
-    {
-        cout<<"初"<<nongday[day];
-    }
-    else if(day>10&&day<20)
-    {
-        cout<<"十"<<nongday[day%10];
-    }
-    else if(day==20)
-    {
-        cout<<"二十";
-    }
-    else if(day>20 && day<30)
-    {
-        cout<<"廿"<<nongday[day%10];
-    }
-    else if(day==30)
-    {
-        cout<<"三十";
-    }
-    cout<<endl;
-}
-
-/*打印农历*/
-void gregorian_to_lunar (int year,int month,int day)
-{
-    if(!checkDate(year,month,day))
-    {
-        cout<<"日期输入出错，请确保日期正确性！"<<endl;
-        return;
-    }
-    cout<<"公历:"<<year<<"年"<<month<<"月"<<day<<"日"<<"   "<<"农历:";
-    int days=getDayTo1939(year,month,day);
-    /*根据天数打印农历*/
-    printNong(days);
-}
-
-/*通式寿星公式 计算二十四节气  公式来源：https://www.jianshu.com/p/1f814c6bb475*/
-/*20,21世纪C值*/
+/** 通式寿星公式 计算二十四节气  公式来源：https://www.jianshu.com/p/1f814c6bb475*/
+// 21世纪C值
 float C_value_21[]= {3.87,18.73,5.63,20.646,4.81,20.1,5.52,21.04,5.678,21.37,7.108,22.83,7.5,23.13,7.646,23.042,8.318,23.438,7.438,22.36,7.18,21.94,5.4055,20.12};
+// 20世纪C值
 float C_value_20[]= {4.6295,19.4599,6.3826,21.4155,5.59,20.888,6.318,21.86,6.5,22.2,7.928,23.65,28.35,23.95,8.44,23.822,9.098,24.218,8.218,23.08,7.9,22.6,6.11,20.84};
-/*节气基础月*/
+// 节气基础月
 float C_month[]= {2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11,12,12,13,13};
-void solar_term(int year1,char* str)
+
+/**
+ * 通过年份节气，获取对应具体日期
+ */
+void get_date_by_solar_term(int year1,char* str)
 {
     int year,month,day;
     year=year1;
@@ -508,7 +118,7 @@ void solar_term(int year1,char* str)
         }
     }
 
-//特殊情况
+    // 特殊情况
     if((year==2026 && tmp==1)||(year==1918 && tmp==21)||(year==2021 && tmp==21)||(year==2019 && tmp==22))
     {
         day--;
@@ -522,6 +132,446 @@ void solar_term(int year1,char* str)
         month=1;
     }
     cout<<temp[tmp]<<": ";
-    /*根据公式计算的年月日，将其转换为农历*/
+    // 根据公式计算的年月日，将其转换为农历
     gregorian_to_lunar (year,month,day);
 }
+
+
+/**
+ * 获取系统时间
+ */
+void get_cur_date(int &year,int &month,int &day)
+{
+    time_t time1;
+    struct tm *ptime;
+    time(&time1);
+    ptime = localtime(&time1);
+    year=ptime->tm_year + 1900;
+    month=ptime->tm_mon + 1;
+    day=ptime->tm_mday;
+}
+
+/**
+ * 判断year年是否是闰年
+ */
+bool is_leap_year(int year)
+{
+    // 可以被4且100整除或者可以被400整除
+    return ((year % 4 == 0 && year % 100 != 0) || year % 400 == 0);
+}
+
+/**
+ * 获取year年month月有多少天
+ */
+int get_days_of_month(int year,int month)
+{
+    // 平年各月公历天数
+    int days[12]= {31,28,31,30,31,30,31,31,30,31,30,31};
+    if(is_leap_year(year)&&month==2)
+        return 29;
+    else
+        return days[month-1];
+}
+
+/**
+ * 获取year年month月day日到1939年1月1日的天数
+ */
+int get_days_to_1939(int year,int month,int day)
+{
+    int days=0;
+    // 从1939年开始计算,直到year-1年,它们都是整数年
+    for(int i=year-1; i>=1939; i--)
+    {
+        if(is_leap_year(i))
+            days+=366;
+        else
+            days+=365;
+    }
+    // 计算year年1月到year年month-1月,它们是整数月
+    for(int i=month-1; i>0; i--)
+    {
+        days+=get_days_of_month(year,i);
+    }
+    // 计算year年month月1日到yera年month月day日天数
+    days+=day;
+    return days-1;
+}
+
+/**
+ * 获取year年month月day日是星期几
+ */
+string get_str_day_of_week(int year,int month,int day)
+{
+    string weeks[7]= {"星期日","星期一","星期二","星期三","星期四","星期五","星期六"};
+    // 获取year年month月day日到1939年1月1日的天数
+    int days=get_days_to_1939(year,month,day);
+    int week=days%7;
+    return weeks[week];
+}
+/**
+ * 获取year年month月day日是星期几，整数版
+ */
+int get_day_of_week(int year,int month,int day)
+{
+    int days=get_days_to_1939(year,month,day);
+    int week=days-(days/7)*7;
+    return week;
+}
+
+/**
+ * 获取year年month月day日到现在的天数，正值为过去，负值为未来
+ */
+int get_days_from_date_to_now(int year,int month,int day)
+{
+    int nowYear;
+    int nowMonth;
+    int nowDay;
+    get_cur_date(nowYear,nowMonth,nowDay);
+    // 现在时间到1939年1月1日的天数
+    int nowto1939=get_days_to_1939(nowYear,nowMonth,nowDay);
+    // 输入的时间到1939年1月1日的天数
+    int tempto1939=get_days_to_1939(year,month,day);
+    // 正数为过去，负数为未来
+    return nowto1939-tempto1939;
+}
+
+/**
+ * 检查年月日合法性
+ */
+bool is_legal(int year,int month,int day)
+{
+    // 还需要判断 year年month月  是否含day天，比如4月有30天，输入31就是错误的
+    return !(year<1939||year>2041||month<0||month>12||day<0||day>get_days_of_month(year,month));
+}
+
+
+
+
+
+
+
+
+/**
+ * 判断润年闰月是大月还是小月
+ */
+bool is_large_month_of_leap_year(int year)
+{
+    // 查表找出是否为闰月 判断high是不是为0
+    int high =(sg_lunarCalendar[year-1939]>>16);
+    if(high==0x00)
+        return false;
+    else
+        return true;
+}
+/**
+ * 返回 润几月  0代表不闰
+ */
+int get_nonth_of_leap_year(int year)
+{
+    // 输出农历润几月
+    int month = sg_lunarCalendar[year-1939] & 0xF;
+    return month;
+}
+
+/**
+ * 判断农历某年某月多少天
+ */
+int get_days_of_lunar_month(int year,int month)
+{
+    // 查表，根据大小月，计算农历月天数
+    int bit=1 << (16-month);
+    if((sg_lunarCalendar[year-1939]/*&0x0000FFFF*/&bit)==0)
+        return 29;
+    else
+        return 30;
+}
+
+// 判断某年农历多少天
+int get_days_of_lunar_year(int year)
+{
+    int days=0;
+    // 农历十二个月天数
+    for(int i=1; i<=12; i++)
+    {
+        days+=get_days_of_lunar_month(year,i);
+    }
+    // 假如有闰月，加上闰月天数
+    if(get_nonth_of_leap_year(year)!=0)
+    {
+        if(is_large_month_of_leap_year(year))
+            days+=30;
+        else
+            days+=29;
+    }
+    return days;
+}
+
+
+/**
+ * 显示距今多少天
+ */
+void print_number_of_date_to_now(int year,int month,int day)
+{
+    if(!is_legal(year,month,day))
+    {
+        cout<<"日期输入出错，请确保日期正确性！"<<endl;
+        return;
+    }
+
+    int days=get_days_from_date_to_now(year,month,day);
+    if(days>0)
+        cout<<year<<"年"<<month<<"月"<<day<<"日\t"<<get_str_day_of_week(year,month,day)<<"\t距现在已过去"<<days<<"天"<<endl;
+    else
+        cout<<year<<"年"<<month<<"月"<<day<<"日\t"<<get_str_day_of_week(year,month,day)<<"\t距现在还有"<<-days<<"天"<<endl;
+}
+
+
+/**
+ * 输入年份月份输出月日历表
+ */
+void print_monthly_calendar(int year,int month)
+{
+    if(year>2041||year<1939||month>12||month<1)
+    {
+        cout<<"日期输入出错，请确保日期在1939-2041年之间"<<endl;
+        return;
+    }
+    cout<<"\t"<<year<<"年"<<month<<"月"<<endl;
+    cout<<" SUN MON TUE WED THU FRI SAT"<<endl;
+    // 计算year年month月1日星期几
+    int week=get_day_of_week(year,month,1);
+    // 调整1日到对应的星期数
+    for(int i=1; i<=week&&week!=7; i++)
+        cout<<"    ";
+    // 打印日历信息
+    for(int i=1; i<=get_days_of_month(year,month); i++)
+    {
+        cout<<setw(3)<<i<<" ";
+        if((week+i)%7==0)
+            cout<<endl;
+    }
+}
+
+/**
+ * 输入年份、季度 一行输出3个月
+ */
+void print_seasons_calendar(int year,int num)
+{
+    if(num>4||num<0)
+    {
+        cout<<"输入季度出错！"<<endl;
+        return;
+    }
+    int month=1+3*(num-1);
+    // 打印日历头
+    cout<<month<<" SUN MON TUE WED THU FRI SAT\t"<<month+1<<" SUN MON TUE WED THU FRI SAT\t"<<month+2<<" SUN MON TUE WED THU FRI SAT"<<endl;
+    // week1、week2、week3 分别代表一个季度的三个月的1日对应星期数
+    int week1=get_day_of_week(year,month,1);
+    int week2=get_day_of_week(year,month+1,1);
+    int week3=get_day_of_week(year,month+2,1);
+
+    // tmp1、tmp2、tmp3分别代表三个月的最大天数
+    int tmp1=get_days_of_month(year,month);
+    int tmp2=get_days_of_month(year,month+1);
+    int tmp3=get_days_of_month(year,month+2);
+
+    int day1,day2,day3;
+
+    /*依次输出第一行信息*/
+    cout<<"  ";
+    for(int i=1; i<=week1 &&week1!=7; i++)
+        cout<<"    ";
+    for(int i=1; i<=tmp1; i++)
+    {
+        cout<<setw(3)<<i<<" ";
+        if((week1+i)%7==0)
+        {
+            day1=i+1;
+            break;
+        }
+    }
+    cout<<"    ";
+    for(int i=1; i<=week2 && week2!=7; i++)
+        cout<<"    ";
+    for(int i=1; i<=tmp2; i++)
+    {
+        cout<<setw(3)<<i<<" ";
+        if((week2+i)%7==0)
+        {
+            day2=i+1;
+            break;
+        }
+    }
+    cout<<"    ";
+    for(int i=1; i<=week3 && week3!=7; i++)
+        cout<<"    ";
+    for(int i=1; i<=tmp3; i++)
+    {
+        cout<<setw(3)<<i<<" ";
+        if((week3+i)%7==0)
+        {
+            day3=i+1;
+            cout<<endl;
+            break;
+        }
+    }
+
+    // 打印余下信息
+    for(int j=0; j<5; j++)
+    {
+        // 如果三个月信息全部打印完，则退出
+        if(day1>tmp1&&day2>tmp2&&day3>tmp3)
+            break;
+        // 数字21代表一行三个周，可容纳21天
+        for(int i=0; i<21;)
+        {
+            cout<<"  ";
+            while(i<7)
+            {
+                i++;
+                // 如果没打印完就打印数字，如果整月天数已经打印完，则输出空格
+                if(day1<=tmp1)
+                    cout<<setw(3)<<day1++<<" ";
+                else
+                    cout<<setw(3)<<" "<<" ";
+            }
+            // 打印月份与月份之间的间隔
+            cout<<"    ";
+            while(i<14&&i>=7)
+            {
+                i++;
+                if(day2<=tmp2)
+                    cout<<setw(3)<<day2++<<" ";
+                else
+                    cout<<setw(3)<<" "<<" ";
+            }
+            cout<<"    ";
+            while(i<21&&i>=14)
+            {
+                i++;
+                if(day3<=tmp3)
+                    cout<<setw(3)<<day3++<<" ";
+                else
+                    cout<<setw(3)<<" "<<" ";
+            }
+        }
+        cout<<endl;
+    }
+    cout<<endl;
+}
+
+
+
+/**
+ * 输出年日历表
+ */
+void print_annual_calendar(int year)
+{
+    if(year>2041||year<1939)
+    {
+        cout<<"日期输入出错，请确保日期正确性！"<<endl;
+        return;
+    }
+    cout<<"\t\t\t\t\t  "<<"------------"<<endl;
+    cout<<"\t\t\t\t\t  "<<year<<"年日历表"<<endl;
+    cout<<"\t\t\t\t\t  "<<"------------"<<endl;
+
+    // 循环输出四个季度 打印完整年日历
+    for(int i=1; i<=4; i++)
+    {
+        print_seasons_calendar(year,i);
+    }
+}
+
+
+/**
+ * 输出农历日历
+ */
+void print_lunar_date(int days)
+{
+    int year=1939,month=1,day=1;
+    // 由于1939年1月1日往往是农历1938年，所以减去48天，从1939年正月初一计算，因为本计算器计算范围为1940年-2040年 所以可以满足
+    days-=48;
+
+    // 判断减去下一年的天数，会不会是负值，不是便减去并增加农历年
+    for(int i=1939; (days-get_days_of_lunar_year(i))>0; i++)
+    {
+        days-=get_days_of_lunar_year(i);
+        year=i+1;
+    }
+    int num;
+    int signal=0;
+    // 判断减去下一月天数，会不会是负值，不会便农历月加1
+    for(int j=1; ((days-get_days_of_lunar_month(year,j))>0)&&j<12; j++)
+    {
+        days-=get_days_of_lunar_month(year,j);
+        if(j==get_nonth_of_leap_year(year))
+        {
+            if(is_large_month_of_leap_year(year))
+            {
+                days-=30;
+                num=30;
+            }
+            else
+            {
+                days-=29;
+                num=29;
+            }
+        }
+        // 当减去农历月的时候，加入变为负值，那么再加回来
+        if(days<0)
+        {
+            // 农历闰月标记
+            signal=1;
+            days +=num;
+            month=j;
+            break;
+        }
+        month=month+1;
+    }
+    // 剩余天数便是农历日
+    day=days;
+    cout<<year<<"年";
+    if(signal==1)
+        cout<<" 闰";
+    cout<<lunarMonth[month];
+    if(day>0&&day<=10)
+    {
+        cout<<"初"<<lunarDay[day];
+    }
+    else if(day>10&&day<20)
+    {
+        cout<<"十"<<lunarDay[day%10];
+    }
+    else if(day==20)
+    {
+        cout<<"二十";
+    }
+    else if(day>20 && day<30)
+    {
+        cout<<"廿"<<lunarDay[day%10];
+    }
+    else if(day==30)
+    {
+        cout<<"三十";
+    }
+    cout<<endl;
+}
+
+/**
+ * 打印农历
+ */
+void gregorian_to_lunar (int year,int month,int day)
+{
+    if(!is_legal(year,month,day))
+    {
+        cout<<"日期输入出错，请确保日期正确性！"<<endl;
+        return;
+    }
+    cout<<"公历:"<<year<<"年"<<month<<"月"<<day<<"日"<<"   "<<"农历:";
+    int days=get_days_to_1939(year,month,day);
+    // 根据天数打印农历
+    print_lunar_date(days);
+}
+
+
